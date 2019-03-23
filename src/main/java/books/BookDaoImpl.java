@@ -5,7 +5,9 @@ import dbconf.ConnectionManager;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.List;
 
 public class BookDaoImpl implements BookDao {
@@ -23,15 +25,14 @@ public class BookDaoImpl implements BookDao {
                 .append("values (?,?,?,?,?);")
                 .toString();
 
-
         try (Connection connection = ConnectionManager.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(insertBookQuery)) {
 
-            preparedStatement.setString(1,book.getTitle());
-            preparedStatement.setInt(2,book.getPagesNumber());
-            preparedStatement.setLong(3,book.getIsbn());
-            preparedStatement.setInt(4,book.getCategoryId());
-            preparedStatement.setInt(5,book.getPublisherId());
+            preparedStatement.setString(1, book.getTitle());
+            preparedStatement.setInt(2, book.getPagesNumber());
+            preparedStatement.setLong(3, book.getIsbn());
+            preparedStatement.setInt(4, book.getCategoryId());
+            preparedStatement.setInt(5, book.getPublisherId());
 
             preparedStatement.execute();
 
@@ -42,7 +43,15 @@ public class BookDaoImpl implements BookDao {
 
     @Override
     public void delete(int id) {
+        String deleteQuery = "delete from books where id = ? ";
 
+        try (Connection connection = ConnectionManager.getConnection();
+             PreparedStatement preparedStatement = connection.prepareStatement(deleteQuery)) {
+            preparedStatement.setInt(1, id);
+            preparedStatement.execute();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
     }
 
     @Override
@@ -57,7 +66,26 @@ public class BookDaoImpl implements BookDao {
 
     @Override
     public List<Book> findByTitle(String title) {
-        return null;
+        String selectQuery = "select * from books where title = ?";
+        List<Book> books = new ArrayList<>();
+        try (Connection connection = ConnectionManager.getConnection();
+             PreparedStatement preparedStatement = connection.prepareStatement(selectQuery)) {
+            preparedStatement.setString(1, title);
+            ResultSet resultSet = preparedStatement.executeQuery();
+            while (resultSet.next()) {
+                Book book = new Book();
+                book.setId(resultSet.getInt("id"));
+                book.setPublisherId((resultSet.getInt("publisher_id")));
+                book.setCategoryId((resultSet.getInt("category_id")));
+                book.setIsbn(resultSet.getLong("isbn"));
+                book.setTitle(resultSet.getString("title"));
+                book.setPagesNumber(resultSet.getInt("pages_number"));
+                books.add(book);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return books;
     }
 
     @Override
