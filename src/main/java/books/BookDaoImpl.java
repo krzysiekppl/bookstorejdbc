@@ -90,7 +90,27 @@ public class BookDaoImpl implements BookDao {
 
     @Override
     public List<Book> findByAuthorFullName(String fullName) {
-        return null;
+        String selectQuery = "select * from books b inner join books_authors ba on b.id = ba.book_id " +
+                "inner join authors a on ba.author_id = a.id where concat(a.first_name, ' ', a.last_name) = ?";
+        List<Book> books = new ArrayList<>();
+        try (Connection connection = ConnectionManager.getConnection();
+             PreparedStatement preparedStatement = connection.prepareStatement(selectQuery)) {
+            preparedStatement.setString(1, fullName);
+            ResultSet resultSet = preparedStatement.executeQuery();
+            while (resultSet.next()) {
+                Book book = new Book();
+                book.setId(resultSet.getInt("id"));
+                book.setPublisherId((resultSet.getInt("publisher_id")));
+                book.setCategoryId((resultSet.getInt("category_id")));
+                book.setIsbn(resultSet.getLong("isbn"));
+                book.setTitle(resultSet.getString("title"));
+                book.setPagesNumber(resultSet.getInt("pages_number"));
+                books.add(book);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return books;
     }
 
     @Override

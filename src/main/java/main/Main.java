@@ -20,7 +20,11 @@ public class Main {
         book.setCategoryId(2);
         book.setPublisherId(2);
 
-        bookDao.insert(book);
+        //bookDao.insert(book);
+
+        List<Book> books = bookDao.findByAuthorFullName("Harlan Coben");
+
+        System.out.println(books);
 
 //        Connection connection = null;
 //        try {
