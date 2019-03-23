@@ -1,6 +1,8 @@
 package books;
 
 import books.model.Book;
+import books.rs.BookExtractor;
+import dbconf.BookstoreDataSource;
 import dbconf.ConnectionManager;
 
 import java.sql.Connection;
@@ -8,6 +10,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public class BookDaoImpl implements BookDao {
@@ -67,25 +70,15 @@ public class BookDaoImpl implements BookDao {
     @Override
     public List<Book> findByTitle(String title) {
         String selectQuery = "select * from books where title = ?";
-        List<Book> books = new ArrayList<>();
+
         try (Connection connection = ConnectionManager.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(selectQuery)) {
             preparedStatement.setString(1, title);
-            ResultSet resultSet = preparedStatement.executeQuery();
-            while (resultSet.next()) {
-                Book book = new Book();
-                book.setId(resultSet.getInt("id"));
-                book.setPublisherId((resultSet.getInt("publisher_id")));
-                book.setCategoryId((resultSet.getInt("category_id")));
-                book.setIsbn(resultSet.getLong("isbn"));
-                book.setTitle(resultSet.getString("title"));
-                book.setPagesNumber(resultSet.getInt("pages_number"));
-                books.add(book);
-            }
+            return BookExtractor.extractBooks(preparedStatement.executeQuery());
         } catch (SQLException e) {
             e.printStackTrace();
         }
-        return books;
+        return Collections.emptyList();
     }
 
     @Override
@@ -93,10 +86,12 @@ public class BookDaoImpl implements BookDao {
         String selectQuery = "select * from books b inner join books_authors ba on b.id = ba.book_id " +
                 "inner join authors a on ba.author_id = a.id where concat(a.first_name, ' ', a.last_name) = ?";
         List<Book> books = new ArrayList<>();
-        try (Connection connection = ConnectionManager.getConnection();
+
+        try (Connection connection = BookstoreDataSource.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(selectQuery)) {
             preparedStatement.setString(1, fullName);
             ResultSet resultSet = preparedStatement.executeQuery();
+
             while (resultSet.next()) {
                 Book book = new Book();
                 book.setId(resultSet.getInt("id"));
@@ -107,6 +102,7 @@ public class BookDaoImpl implements BookDao {
                 book.setPagesNumber(resultSet.getInt("pages_number"));
                 books.add(book);
             }
+
         } catch (SQLException e) {
             e.printStackTrace();
         }
